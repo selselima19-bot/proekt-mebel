@@ -1,18 +1,38 @@
 /*
- This file defines the home page.
- It shows a clean starting screen for the project.
- You can replace this content with your first real section.
+ Это главная страница магазина мебели Libro Meble.
+ Она показывает премиум дизайн с полноэкранным слайдером, 
+ категориями мебели, блогом и информацией о коллекции Tabou.
+ Pользователь может изучить все виды мебели и прочитать статьи блога.
 */
-import styles from "./page.module.css";
+import Navigation from "./components/Navigation";
+import HeroSlider from "./components/HeroSlider";
+import OfferCards from "./components/OfferCards";
+import TabouCollection from "./components/TabouCollection";
+import BlogSection from "./components/BlogSection";
+import Footer from "./components/Footer";
 
 export default function Home() {
   return (
-    <main className={styles.page}>
-      {/* Main title for an empty project start page */}
-      <h1 className={styles.title}>Project start page</h1>
+    <>
+      {/* Главная навигация */}
+      <Navigation />
+      
+      {/* Полноэкранный слайдер */}
+      <HeroSlider />
+      
+      <main className="main-content">
+        {/* Категории и предложения мебели */}
+        <OfferCards />
 
-      {/* Short helper text to show where to begin */}
-      <p className={styles.subtitle}>Ready for your first block or component.</p>
-    </main>
+        {/* Коллекция Tabou */}
+        <TabouCollection />
+
+        {/* Блог с последними статьями */}
+        <BlogSection />
+      </main>
+
+      {/* Подвал сайта */}
+      <Footer />
+    </>
   );
 }

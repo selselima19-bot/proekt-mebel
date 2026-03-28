@@ -1,3 +1,9 @@
+/*
+Этот файл задает общий каркас всех страниц сайта.
+Он подключает глобальные стили и шрифты, а также оборачивает весь интерфейс.
+Пользователь видит одинаковую базовую структуру на каждой странице.
+*/
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -23,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="ru" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
         {children}
       </body>
     </html>

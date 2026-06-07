@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(grep -r \"performanceObserver\\\\|requestIdleCallback\\\\|lazy\\\\|Suspense\\\\|Image\" 'C:\\\\Users\\\\48739\\\\Desktop\\\\мебель  элит\\\\my-proekt\\\\src' --include=*.tsx --include=*.ts)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run:*)"
+    ]
+  }
+}

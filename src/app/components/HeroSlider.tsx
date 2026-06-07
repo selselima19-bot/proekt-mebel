@@ -4,13 +4,12 @@
   Пользователь видит видео сразу при открытии страницы.
 */
 
+import Link from 'next/link';
+
 export default function HeroSlider() {
   return (
-    /* Главный блок с единственным видео на весь экран. */
     <section className="hero-slider">
-      {/* Видео из папки public, которое всегда показывается на главной. */}
-      <div className="hero-slide active" role="img" aria-label="Главный экран с видео">
-        {/* Видео из папки public как фон для главного экрана. */}
+      <div className="hero-slide active">
         <video
           className="hero-slide-video"
           autoPlay
@@ -21,6 +20,17 @@ export default function HeroSlider() {
         >
           <source src="/Generisanje_video_snimka_visokog_kvaliteta.mp4" type="video/mp4" />
         </video>
+
+        <div className="hero-overlay" />
+
+        <div className="hero-content">
+          <h1 className="hero-title">Создайте интерьер,<br />который вдохновляет</h1>
+          <p className="hero-subtitle">Диваны, кресла и кровати из высококачественных материалов</p>
+          <div className="hero-actions">
+            <Link href="/catalog" className="hero-btn hero-btn--primary">Смотреть каталог</Link>
+            <Link href="/contacts" className="hero-btn hero-btn--outline">Связаться с нами</Link>
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -13,8 +13,7 @@ export default function BlogSection() {
       title: 'Софы из бульклэ – стильный тренд или временная мода?',
       excerpt:
         'В последние сезоны ткань бульклэ доминирует на мебельном рынке, особенно в сегменте диванов и кресел.',
-      image:
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80',
+      image: '/фото с 1.jpg',
       href: '/blog/sofas-bukle',
     },
     {
@@ -40,8 +39,7 @@ export default function BlogSection() {
       title: 'Бежевый диван в гостиной – модный тренд',
       excerpt:
         'Бежевая софа – один из самых горячих трендов в дизайне интерьеров последних лет. Почему? Потому что она универсальна и стильна.',
-      image:
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80',
+      image: '/фото с 2.jpg',
       href: '/blog/beige-sofa',
     },
     {
@@ -58,8 +56,7 @@ export default function BlogSection() {
       title: 'Как разместить очень большой угловой диван в гостиной?',
       excerpt:
         'Очень большой угловой диван для гостиной – мечта многих из нас: удобный, просторный, идеальный для семей.',
-      image:
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80',
+      image: '/фото т 3.jpg',
       href: '/blog/large-sofa',
     },
     {
@@ -76,8 +73,7 @@ export default function BlogSection() {
       title: 'Биофилия в интерьере – модный тренд 2025 года',
       excerpt:
         'Биофилия. Звучит загадочно, правда? А это ничто иное, как любовь к природе, которую мы будем видеть в интерьерах.',
-      image:
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80',
+      image: '/фото к 1.jpg',
       href: '/blog/biophilia',
     },
     {

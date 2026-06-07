@@ -1,25 +1,62 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
-const COLORS = {
-  beige:     { name: 'Бежевый',   hex: '#C4A882' },
-  grey:      { name: 'Серый',     hex: '#8B8B8B' },
-  anthracite:{ name: 'Антрацит',  hex: '#3C3C3C' },
-  blue:      { name: 'Синий',     hex: '#4A6FA5' },
-  green:     { name: 'Зелёный',   hex: '#5B7A61' },
-  terracotta:{ name: 'Терракот',  hex: '#C2714F' },
-  brown:     { name: 'Коричневый',hex: '#6B4226' },
-  mustard:   { name: 'Горчичный', hex: '#C4962A' },
-  white:     { name: 'Молочный',  hex: '#E8E4DF' },
-  gold:      { name: 'Золотой',   hex: '#C9A84C' },
-  burgundy:  { name: 'Бордо',     hex: '#7A2B35' },
-};
+/* ── Слайдер картинок ── */
+function ImageSlider({ images }: { images: string[] }) {
+  const [current, setCurrent] = useState(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const next = useCallback(() => {
+    setCurrent((c) => (c + 1) % images.length);
+  }, [images.length]);
+
+  useEffect(() => {
+    timer.current = setTimeout(next, 3200);
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [current, next]);
+
+  const goTo = (e: React.MouseEvent, idx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (timer.current) clearTimeout(timer.current);
+    setCurrent(idx);
+  };
+
+  return (
+    <>
+      {images.map((src, i) => (
+        <div
+          key={src}
+          className="offer-card__image offer-card__slide"
+          style={{
+            backgroundImage: `url('${src}')`,
+            opacity: i === current ? 1 : 0,
+            transition: 'opacity 0.7s ease',
+            position: i === 0 ? 'relative' : 'absolute',
+            inset: 0,
+          }}
+        />
+      ))}
+      {/* Точки-индикаторы */}
+      <div className="offer-slider-dots" onClick={(e) => e.preventDefault()}>
+        {images.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`offer-slider-dot${i === current ? ' offer-slider-dot--active' : ''}`}
+            onClick={(e) => goTo(e, i)}
+            aria-label={`Слайд ${i + 1}`}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
 
 export default function OfferCards() {
   const [visibleCards, setVisibleCards] = useState<Record<number, boolean>>({});
-  const [selectedColors, setSelectedColors] = useState<Record<number, string>>({});
   const cardRefs = useRef<Record<number, HTMLAnchorElement | null>>({});
 
   const offers = [
@@ -27,32 +64,39 @@ export default function OfferCards() {
       id: 1,
       title: 'Угловые диваны',
       cta: 'Смотреть коллекцию',
-      image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1000&q=80',
+      image: '/фото с 1.jpg',
+      images: [
+        '/фото с 1.jpg',
+        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1000&q=80',
+        'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=1000&q=80',
+      ],
       href: '/furniture/corner-sofas',
       hoverTone: 'preview-warm',
       layout: 'hero',
-      colors: [COLORS.beige, COLORS.grey, COLORS.anthracite, COLORS.blue],
     },
     {
       id: 2,
       title: 'Диваны',
       cta: 'Перейти в раздел',
-      image: 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=1000&q=80',
+      image: '/фото с 2.jpg',
+      images: [
+        '/фото с 2.jpg',
+        'https://images.unsplash.com/photo-1550254478-ead40cc54513?auto=format&fit=crop&w=1000&q=80',
+        'https://images.unsplash.com/photo-1484101403633-562f891dc89a?auto=format&fit=crop&w=1000&q=80',
+      ],
       href: '/furniture/sofas',
       hoverTone: 'preview-cool',
       layout: 'wide',
-      colors: [COLORS.beige, COLORS.green, COLORS.terracotta, COLORS.grey],
     },
     {
       id: 3,
       title: 'Модульная мебель',
       cta: 'Собрать вариант',
-      image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1000&q=80',
+      image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1000&q=80',
       href: '/furniture/modular',
       hoverTone: 'preview-olive',
       layout: 'standard',
       slideDir: 'left' as const,
-      colors: [COLORS.beige, COLORS.grey, COLORS.anthracite, COLORS.brown],
     },
     {
       id: 4,
@@ -63,7 +107,6 @@ export default function OfferCards() {
       hoverTone: 'preview-rose',
       layout: 'standard',
       slideDir: 'right' as const,
-      colors: [COLORS.beige, COLORS.grey, COLORS.blue, COLORS.green],
     },
     {
       id: 5,
@@ -73,27 +116,24 @@ export default function OfferCards() {
       href: '/furniture/beds',
       hoverTone: 'preview-sand',
       layout: 'standard',
-      colors: [COLORS.white, COLORS.beige, COLORS.grey, COLORS.anthracite],
     },
     {
       id: 6,
       title: 'Кресла',
       cta: 'Выбрать кресло',
-      image: 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?auto=format&fit=crop&w=1000&q=80',
+      image: '/фото к 1.jpg',
       href: '/furniture/chairs',
       hoverTone: 'preview-night',
       layout: 'standard',
-      colors: [COLORS.mustard, COLORS.blue, COLORS.green, COLORS.terracotta],
     },
     {
       id: 7,
       title: 'Пуфы',
       cta: 'Смотреть пуфы',
-      image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1000&q=80',
+      image: '/фото к2.jpg',
       href: '/furniture/poufs',
       hoverTone: 'preview-emerald',
       layout: 'standard',
-      colors: [COLORS.terracotta, COLORS.green, COLORS.beige, COLORS.mustard],
     },
     {
       id: 8,
@@ -103,40 +143,30 @@ export default function OfferCards() {
       href: '/catalog',
       hoverTone: 'preview-sky',
       layout: 'standard',
-      colors: [COLORS.beige, COLORS.grey, COLORS.blue, COLORS.anthracite],
     },
     {
       id: 9,
       title: 'Как создается мебель',
       cta: 'Узнать процесс',
       image: 'https://images.unsplash.com/photo-1565193566173-7ace0ee75741?auto=format&fit=crop&w=1000&q=80',
+      inlineImage: 'https://images.unsplash.com/photo-1565193566173-7ace0ee75741?auto=format&fit=crop&w=1000&q=80',
       href: '/production',
       hoverTone: 'preview-violet',
       layout: 'wide',
-      colors: [COLORS.brown, COLORS.beige, COLORS.grey, COLORS.anthracite],
     },
     {
       id: 10,
       title: 'Коллекция Tabou',
       cta: 'Перейти в Tabou',
-      image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1000&q=80',
+      image: '/фото т 1.jpg',
       href: '/tabou',
       hoverTone: 'preview-amber',
       layout: 'hero',
-      colors: [COLORS.gold, COLORS.anthracite, COLORS.beige, COLORS.burgundy],
     },
   ];
 
   const setCardRef = (id: number) => (element: HTMLAnchorElement | null) => {
     cardRefs.current[id] = element;
-  };
-
-  const handleColorPick = (e: React.MouseEvent, cardId: number, hex: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedColors((prev) =>
-      prev[cardId] === hex ? { ...prev, [cardId]: '' } : { ...prev, [cardId]: hex }
-    );
   };
 
   useEffect(() => {
@@ -167,8 +197,8 @@ export default function OfferCards() {
         </div>
 
         <div className="offer-cards-container">
-          {offers.map((offer) => {
-            const activeTint = selectedColors[offer.id] || '';
+          {offers.map((offer, index) => {
+            const hasSlider = 'images' in offer && offer.images.length > 1;
             return (
               <Link
                 key={offer.id}
@@ -184,17 +214,15 @@ export default function OfferCards() {
                     ? 'offer-card--hidden-right'
                     : 'offer-card--hidden'
                 }`}
-                style={{ transitionDelay: `${offer.id * 60}ms` }}
+                style={{ transitionDelay: visibleCards[offer.id] ? `${index * 65}ms` : '0ms' }}
               >
                 <div className="offer-card__media" aria-hidden="true">
-                  <div
-                    className="offer-card__image"
-                    style={{ backgroundImage: `url('${offer.image}')` }}
-                  />
-                  {activeTint && (
+                  {hasSlider ? (
+                    <ImageSlider images={(offer as typeof offer & { images: string[] }).images} />
+                  ) : (
                     <div
-                      className="offer-card__color-tint"
-                      style={{ backgroundColor: activeTint }}
+                      className="offer-card__image"
+                      style={{ backgroundImage: `url('${offer.image}')` }}
                     />
                   )}
                   <div className="offer-card__glow" />
@@ -203,22 +231,15 @@ export default function OfferCards() {
                 <div className="offer-card__content">
                   <div className="offer-card__body">
                     <h3 className="offer-card__title">{offer.title}</h3>
+                    {'inlineImage' in offer && offer.inlineImage && (
+                      <div
+                        className="offer-card__inline-img"
+                        style={{ backgroundImage: `url('${offer.inlineImage}')` }}
+                      />
+                    )}
                   </div>
 
                   <div className="offer-card__footer">
-                    <div className="offer-card__swatches">
-                      {offer.colors.map((color) => (
-                        <button
-                          key={color.hex}
-                          type="button"
-                          className={`offer-card__swatch${activeTint === color.hex ? ' offer-card__swatch--active' : ''}`}
-                          style={{ backgroundColor: color.hex }}
-                          title={color.name}
-                          onClick={(e) => handleColorPick(e, offer.id, color.hex)}
-                        />
-                      ))}
-                    </div>
-
                     <span className="offer-card__cta">
                       <span>{offer.cta}</span>
                       <span aria-hidden="true" className="offer-card__cta-icon">→</span>

@@ -7,7 +7,6 @@
 import Navigation from "./components/Navigation";
 import HeroSlider from "./components/HeroSlider";
 import OfferCards from "./components/OfferCards";
-import BenefitsGrid from "./components/BenefitsGrid";
 import TabouCollection from "./components/TabouCollection";
 import BlogSection from "./components/BlogSection";
 import CtaBanner from "./components/CtaBanner";
@@ -25,9 +24,6 @@ export default function Home() {
       <main className="main-content">
         {/* Категории и предложения мебели */}
         <OfferCards />
-
-        {/* Преимущества компании */}
-        <BenefitsGrid />
 
         {/* Коллекция Tabou */}
         <TabouCollection />

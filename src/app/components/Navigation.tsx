@@ -1,3 +1,8 @@
+/*
+Этот файл определяет верхнюю навигацию сайта для всех страниц.
+Он показывает логотип, переходы по разделам, кнопку корзины и контакты в выпадающем списке.
+Пользователь может быстро перейти к нужной странице или открыть мобильное меню.
+*/
 'use client';
 
 // Навигация сайта: верхняя панель + строка категорий + мобильное меню
@@ -120,8 +125,10 @@ export default function Navigation() {
               </a>
 
               <a
-                href="#"
+                href="https://facebook.com"
                 className="social-dropdown__item"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setIsSocialOpen(false)}
                 role="menuitem"
               >
@@ -132,8 +139,10 @@ export default function Navigation() {
               </a>
 
               <a
-                href="#"
+                href="https://instagram.com"
                 className="social-dropdown__item"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setIsSocialOpen(false)}
                 role="menuitem"
               >
@@ -146,8 +155,10 @@ export default function Navigation() {
               </a>
 
               <a
-                href="#"
+                href="https://youtube.com"
                 className="social-dropdown__item"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setIsSocialOpen(false)}
                 role="menuitem"
               >

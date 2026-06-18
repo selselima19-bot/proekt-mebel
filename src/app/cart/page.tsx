@@ -1,35 +1,40 @@
+/*
+Этот файл определяет страницу корзины и оформления заказа.
+Он показывает товары, шаги покупки, форму доставки и подтверждение заказа.
+Пользователь может изменить количество, удалить позиции и завершить оформление.
+*/
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
-
-interface CartItem {
-  id: number;
-  name: string;
-  material: string;
-  color: string;
-  price: number;
-  qty: number;
-  image: string;
-}
-
-const INITIAL_CART: CartItem[] = [];
+import { CartItem, readCartFromStorage, writeCartToStorage } from '../lib/cartStorage';
 
 type Step = 'cart' | 'checkout' | 'done';
 
 export default function CartPage() {
-  const [cart, setCart]       = useState<CartItem[]>(INITIAL_CART);
-  const [step, setStep]       = useState<Step>('cart');
-  const [agreed, setAgreed]   = useState(false);
-  const [form, setForm]       = useState({
+  // Основной список товаров, которые пользователь добавил в корзину.
+  const [cart, setCart] = useState<CartItem[]>(() => readCartFromStorage());
+  // Текущий шаг покупки: корзина, оформление или экран успеха.
+  const [step, setStep] = useState<Step>('cart');
+  // Подтверждение согласия с условиями перед отправкой заказа.
+  const [agreed, setAgreed] = useState(false);
+  // Данные формы для доставки и контактов.
+  const [form, setForm] = useState({
     name: '', phone: '', email: '', city: '', address: '', delivery: 'courier', payment: 'card', comment: '',
   });
-  const [errors, setErrors]   = useState<Partial<typeof form>>({});
+  // Сообщения об ошибках в обязательных полях.
+  const [errors, setErrors] = useState<Partial<typeof form>>({});
+
+  // После любого изменения корзины сохраняем данные в localStorage.
+  useEffect(() => {
+    writeCartToStorage(cart);
+  }, [cart]);
 
   /* ---- корзина ---- */
-  function changeQty(id: number, delta: number) {
+  // Меняем количество выбранного товара.
+  function changeQty(id: string, delta: number) {
     setCart((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
@@ -37,7 +42,8 @@ export default function CartPage() {
     );
   }
 
-  function remove(id: number) {
+  // Удаляем конкретный товар из корзины.
+  function remove(id: string) {
     setCart((prev) => prev.filter((item) => item.id !== id));
   }
 
@@ -46,12 +52,14 @@ export default function CartPage() {
   const total     = subtotal + delivery;
 
   /* ---- форма ---- */
+  // Обновляем конкретное поле формы при вводе пользователя.
   function handleField(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: '' }));
   }
 
+  // Проверяем обязательные поля перед отправкой заказа.
   function validate(): boolean {
     const e: Partial<typeof form> = {};
     if (!form.name.trim())  e.name  = 'Укажите имя';
@@ -62,6 +70,7 @@ export default function CartPage() {
     return Object.keys(e).length === 0;
   }
 
+  // Обрабатываем отправку заказа и переводим пользователя на экран успеха.
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (validate() && agreed) setStep('done');

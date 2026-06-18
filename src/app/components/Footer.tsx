@@ -1,3 +1,8 @@
+/*
+Этот файл определяет подвал сайта с контактами и навигацией.
+Он показывает телефон, email, быстрые ссылки и ссылки на соцсети.
+Пользователь может перейти в нужный раздел или связаться с компанией.
+*/
 import Link from 'next/link';
 
 export default function Footer() {
@@ -27,8 +32,8 @@ export default function Footer() {
         <div className="footer-section">
           <p className="footer-section-title">Соцсети</p>
           <div className="footer-social">
-            <a href="#" className="footer-social-link">Instagram</a>
-            <a href="#" className="footer-social-link">Facebook</a>
+            <a href="https://instagram.com" className="footer-social-link" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <a href="https://facebook.com" className="footer-social-link" target="_blank" rel="noopener noreferrer">Facebook</a>
             <a href="https://wa.me/48777777777" className="footer-social-link" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </div>
         </div>

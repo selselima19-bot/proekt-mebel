@@ -1,3 +1,8 @@
+/*
+Этот файл показывает сетку карточек с основными направлениями мебели.
+Он выводит категории с изображениями и коротким действием для перехода в нужный раздел.
+Пользователь может открыть интересующую категорию и перейти в каталог или на тематическую страницу.
+*/
 'use client';
 
 import Link from 'next/link';
@@ -55,11 +60,31 @@ function ImageSlider({ images }: { images: string[] }) {
   );
 }
 
+type OfferCardItem = {
+  id: number;
+  title: string;
+  cta: string;
+  image: string;
+  href: string;
+  hoverTone: string;
+  layout: 'hero' | 'wide' | 'standard';
+  images?: string[];
+  slideDir?: 'left' | 'right';
+  inlineImage?: string;
+};
+
+function hasSliderImages(offer: OfferCardItem): offer is OfferCardItem & { images: string[] } {
+  return Array.isArray(offer.images) && offer.images.length > 1;
+}
+
 export default function OfferCards() {
+  // Здесь храним, какие карточки уже появились на экране и должны анимироваться.
   const [visibleCards, setVisibleCards] = useState<Record<number, boolean>>({});
+  // Здесь держим ссылки на DOM-элементы карточек для наблюдения за их появлением.
   const cardRefs = useRef<Record<number, HTMLAnchorElement | null>>({});
 
-  const offers = [
+  // Список карточек категорий, который выводится на главной странице.
+  const offers: OfferCardItem[] = [
     {
       id: 1,
       title: 'Угловые диваны',
@@ -146,10 +171,9 @@ export default function OfferCards() {
     },
     {
       id: 9,
-      title: 'Как создается мебель',
-      cta: 'Узнать процесс',
-      image: 'https://images.unsplash.com/photo-1565193566173-7ace0ee75741?auto=format&fit=crop&w=1000&q=80',
-      inlineImage: 'https://images.unsplash.com/photo-1565193566173-7ace0ee75741?auto=format&fit=crop&w=1000&q=80',
+      title: 'Производство мебели',
+      cta: 'Подробнее',
+      image: '/фото т 2.jpg',
       href: '/production',
       hoverTone: 'preview-violet',
       layout: 'wide',
@@ -165,10 +189,12 @@ export default function OfferCards() {
     },
   ];
 
+  // Сохраняем ссылку на карточку по ее id, чтобы потом отслеживать появление карточки.
   const setCardRef = (id: number) => (element: HTMLAnchorElement | null) => {
     cardRefs.current[id] = element;
   };
 
+  // Когда карточка попадает в экран, плавно показываем ее и больше не наблюдаем за ней.
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -188,6 +214,7 @@ export default function OfferCards() {
   }, []);
 
   return (
+    // Основной визуальный блок с категориями и интерактивными карточками.
     <section className="offer-cards" aria-labelledby="offer-cards-title">
       <div className="offer-cards-shell">
         <div className="offer-cards-intro">
@@ -198,7 +225,7 @@ export default function OfferCards() {
 
         <div className="offer-cards-container">
           {offers.map((offer, index) => {
-            const hasSlider = 'images' in offer && offer.images.length > 1;
+            const hasSlider = hasSliderImages(offer);
             return (
               <Link
                 key={offer.id}
@@ -218,7 +245,7 @@ export default function OfferCards() {
               >
                 <div className="offer-card__media" aria-hidden="true">
                   {hasSlider ? (
-                    <ImageSlider images={(offer as typeof offer & { images: string[] }).images} />
+                    <ImageSlider images={offer.images} />
                   ) : (
                     <div
                       className="offer-card__image"

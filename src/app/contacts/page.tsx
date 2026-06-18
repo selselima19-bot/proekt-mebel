@@ -1,3 +1,8 @@
+/*
+Этот файл определяет страницу контактов.
+Он показывает, как связаться с компанией, где находятся салоны и как отправить заявку.
+Пользователь может быстро выбрать удобный способ связи и получить консультацию.
+*/
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 
@@ -11,6 +16,12 @@ export default function ContactsPage() {
           <p className="inner-hero__eyebrow">Связь</p>
           <h1 className="inner-hero__title">Свяжитесь с нами</h1>
           <p className="inner-hero__sub">Мы всегда рады обсудить ваш проект или помочь с подбором мебели.</p>
+          {/* Кнопки быстрого перехода к самым частым запросам клиентов. */}
+          <div className="inner-hero__actions">
+            <a href="#contact-form" className="inner-hero__quick-btn">Замеры</a>
+            <a href="#showrooms" className="inner-hero__quick-btn">Доставка</a>
+            <a href="tel:+48777777777" className="inner-hero__quick-btn">Консультация</a>
+          </div>
         </div>
       </div>
 
@@ -39,7 +50,7 @@ export default function ContactsPage() {
         </section>
 
         {/* Салоны */}
-        <section className="showrooms">
+        <section className="showrooms" id="showrooms">
           <h2 className="showrooms__title">Наши салоны</h2>
           <div className="showrooms__grid">
             <article className="showroom-card">
@@ -61,7 +72,7 @@ export default function ContactsPage() {
         </section>
 
         {/* Форма */}
-        <section className="contact-form-section">
+        <section className="contact-form-section" id="contact-form">
           <div className="contact-form-wrap">
             <div className="contact-form-info">
               <h2>Напишите нам</h2>

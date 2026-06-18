@@ -1,8 +1,15 @@
+/*
+Этот файл определяет страницу каталога мебели с фильтрами и секциями.
+Он показывает категории товаров, карточки моделей и панель отбора по параметрам.
+Пользователь может отфильтровать каталог и добавить товар в корзину.
+*/
 'use client';
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import Footer from '../components/Footer';
+import { Color, Material, Product, SECTIONS, Style } from '../data/catalogProducts';
+import { readCartFromStorage, upsertCartItem } from '../lib/cartStorage';
 
 const NAV_ITEMS = [
   { label: 'Новые',     href: '#new' },
@@ -16,124 +23,50 @@ const NAV_ITEMS = [
   { label: 'Пуфы',      href: '#poufs' },
 ];
 
-type FurType  = 'all'|'sofa'|'corner'|'chair'|'bed'|'pouf'|'modular'|'set';
-type Material = 'all'|'fabric'|'leather'|'velour';
-type Color    = 'all'|'beige'|'grey'|'brown'|'blue'|'green'|'black';
-type Style    = 'all'|'modern'|'scandinavian'|'classic'|'loft';
-type Size     = 'all'|'small'|'medium'|'large';
-type Price    = 'all'|'low'|'mid'|'high';
-type Purpose  = 'all'|'home'|'office';
-
-interface Product {
-  id: number;
-  name: string;
-  price: string;
-  priceNum: number;
-  image: string;
-  type: FurType;
-  material: Material;
-  color: Color;
-  style: Style;
-  size: Size;
-  purpose: Purpose;
+interface ProductDetails {
+  description: string;
+  sizes: string[];
+  materials: string[];
+  colors: string[];
+  country: string;
 }
 
-const SECTIONS: { id: string; title: string; products: Product[] }[] = [
-  {
-    id: 'new',
-    title: 'Новые поступления',
-    products: [
-      { id:1, name:'Диван Oslo',    price:'от 1 890 €', priceNum:1890, image:'/фото с 1.jpg',  type:'sofa',   material:'fabric',  color:'beige', style:'scandinavian', size:'medium', purpose:'home' },
-      { id:2, name:'Кресло Bergen', price:'от 690 €',   priceNum:690,  image:'/фото к 1.jpg',  type:'chair',  material:'fabric',  color:'grey',  style:'modern',       size:'small',  purpose:'home' },
-      { id:3, name:'Угловой Porto', price:'от 2 490 €', priceNum:2490, image:'/фото с 2.jpg',  type:'corner', material:'velour',  color:'blue',  style:'modern',       size:'large',  purpose:'home' },
-      { id:4, name:'Tabou Luxe',    price:'от 3 490 €', priceNum:3490, image:'/фото т 1.jpg',  type:'sofa',   material:'leather', color:'brown', style:'classic',      size:'large',  purpose:'home' },
-    ],
-  },
-  {
-    id: 'all',
-    title: 'Вся мебель',
-    products: [
-      { id:1, name:'Диван Oslo',       price:'от 1 890 €', priceNum:1890, image:'/фото с 1.jpg',  type:'sofa',   material:'fabric',  color:'beige', style:'scandinavian', size:'medium', purpose:'home' },
-      { id:2, name:'Диван Bergen',     price:'от 1 590 €', priceNum:1590, image:'/фото с 2.jpg',  type:'sofa',   material:'fabric',  color:'grey',  style:'scandinavian', size:'medium', purpose:'home' },
-      { id:3, name:'Кресло Bergen',    price:'от 690 €',   priceNum:690,  image:'/фото к 1.jpg',  type:'chair',  material:'fabric',  color:'grey',  style:'modern',       size:'small',  purpose:'home' },
-      { id:4, name:'Кресло Malmo',     price:'от 750 €',   priceNum:750,  image:'/фото к2.jpg',   type:'chair',  material:'leather', color:'black', style:'modern',       size:'small',  purpose:'office' },
-      { id:5, name:'Tabou Classic',    price:'от 2 990 €', priceNum:2990, image:'/фото т 1.jpg',  type:'sofa',   material:'velour',  color:'brown', style:'classic',      size:'large',  purpose:'home' },
-      { id:6, name:'Tabou Luxe',       price:'от 3 490 €', priceNum:3490, image:'/фото т 3.jpg',  type:'sofa',   material:'leather', color:'brown', style:'classic',      size:'large',  purpose:'home' },
-      { id:7, name:'Угловой Porto L',  price:'от 2 490 €', priceNum:2490, image:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80', type:'corner', material:'fabric', color:'beige', style:'modern', size:'large', purpose:'home' },
-      { id:8, name:'Кровать Lund 160', price:'от 1 290 €', priceNum:1290, image:'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=600&q=80', type:'bed', material:'fabric', color:'beige', style:'scandinavian', size:'medium', purpose:'home' },
-    ],
-  },
-  {
-    id: 'corner-sofas',
-    title: 'Угловые диваны',
-    products: [
-      { id:1, name:'Угловой Porto L', price:'от 2 490 €', priceNum:2490, image:'/фото с 1.jpg',  type:'corner', material:'fabric',  color:'beige', style:'modern',       size:'large', purpose:'home' },
-      { id:2, name:'Угловой Porto P', price:'от 2 890 €', priceNum:2890, image:'/фото с 2.jpg',  type:'corner', material:'velour',  color:'blue',  style:'modern',       size:'large', purpose:'home' },
-      { id:3, name:'Corner Oslo',     price:'от 2 190 €', priceNum:2190, image:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80', type:'corner', material:'fabric', color:'grey',  style:'scandinavian', size:'large', purpose:'home' },
-      { id:4, name:'Corner Max',      price:'от 1 490 €', priceNum:1490, image:'https://images.unsplash.com/photo-1549187774-b4e9b0445b41?auto=format&fit=crop&w=600&q=80', type:'corner', material:'fabric', color:'beige', style:'loft',         size:'large', purpose:'home' },
-    ],
-  },
-  {
-    id: 'sofas',
-    title: 'Диваны',
-    products: [
-      { id:1, name:'Диван Oslo 2-мест.', price:'от 1 290 €', priceNum:1290, image:'/фото с 1.jpg',  type:'sofa', material:'fabric',  color:'beige', style:'scandinavian', size:'small',  purpose:'home' },
-      { id:2, name:'Диван Oslo 3-мест.', price:'от 1 590 €', priceNum:1590, image:'/фото с 2.jpg',  type:'sofa', material:'fabric',  color:'grey',  style:'scandinavian', size:'medium', purpose:'home' },
-      { id:3, name:'Диван Bergen',       price:'от 690 €',   priceNum:690,  image:'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=600&q=80', type:'sofa', material:'fabric',  color:'green', style:'loft', size:'medium', purpose:'office' },
-      { id:4, name:'Диван Relax',        price:'от 590 €',   priceNum:590,  image:'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=600&q=80', type:'sofa', material:'velour',  color:'grey',  style:'modern', size:'small', purpose:'home' },
-    ],
-  },
-  {
-    id: 'modular',
-    title: 'Модульная мебель',
-    products: [
-      { id:1, name:'Модуль прямой',  price:'от 490 €',   priceNum:490,  image:'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=80', type:'modular', material:'fabric',  color:'beige', style:'modern',       size:'small',  purpose:'home' },
-      { id:2, name:'Модуль угловой', price:'от 590 €',   priceNum:590,  image:'/фото с 1.jpg',  type:'modular', material:'fabric',  color:'grey',  style:'scandinavian', size:'medium', purpose:'home' },
-      { id:3, name:'Модуль шезлонг', price:'от 690 €',   priceNum:690,  image:'/фото с 2.jpg',  type:'modular', material:'velour',  color:'blue',  style:'modern',       size:'medium', purpose:'home' },
-      { id:4, name:'Комплект S',     price:'от 1 690 €', priceNum:1690, image:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80', type:'modular', material:'leather', color:'black', style:'loft', size:'large', purpose:'office' },
-    ],
-  },
-  {
-    id: 'sets',
-    title: 'Комплекты мебели',
-    products: [
-      { id:1, name:'Oslo Set',   price:'от 2 490 €', priceNum:2490, image:'/фото с 1.jpg',  type:'set', material:'fabric',  color:'beige', style:'scandinavian', size:'large', purpose:'home' },
-      { id:2, name:'Bergen Set', price:'от 1 890 €', priceNum:1890, image:'/фото с 2.jpg',  type:'set', material:'velour',  color:'grey',  style:'modern',       size:'large', purpose:'home' },
-      { id:3, name:'Tabou Set',  price:'от 3 490 €', priceNum:3490, image:'/фото т 1.jpg',  type:'set', material:'leather', color:'brown', style:'classic',      size:'large', purpose:'home' },
-      { id:4, name:'Loft Set',   price:'от 990 €',   priceNum:990,  image:'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=600&q=80', type:'set', material:'fabric', color:'black', style:'loft', size:'medium', purpose:'office' },
-    ],
-  },
-  {
-    id: 'chairs',
-    title: 'Кресла',
-    products: [
-      { id:1, name:'Кресло Bergen',    price:'от 690 €',   priceNum:690,  image:'/фото к 1.jpg',  type:'chair', material:'fabric',  color:'beige', style:'scandinavian', size:'small', purpose:'home' },
-      { id:2, name:'Кресло Malmo',     price:'от 750 €',   priceNum:750,  image:'/фото к2.jpg',   type:'chair', material:'leather', color:'black', style:'modern',       size:'small', purpose:'office' },
-      { id:3, name:'Кресло Relax Pro', price:'от 990 €',   priceNum:990,  image:'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?auto=format&fit=crop&w=600&q=80', type:'chair', material:'velour', color:'blue', style:'modern', size:'small', purpose:'home' },
-      { id:4, name:'Кресло Skansi',    price:'от 1 850 €', priceNum:1850, image:'https://images.unsplash.com/photo-1550254478-ead40cc54513?auto=format&fit=crop&w=600&q=80', type:'chair', material:'leather', color:'brown', style:'classic', size:'small', purpose:'office' },
-    ],
-  },
-  {
-    id: 'beds',
-    title: 'Кровати',
-    products: [
-      { id:1, name:'Кровать Lund 160', price:'от 1 290 €', priceNum:1290, image:'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=600&q=80', type:'bed', material:'fabric',  color:'beige', style:'scandinavian', size:'medium', purpose:'home' },
-      { id:2, name:'Кровать Lund 180', price:'от 1 490 €', priceNum:1490, image:'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80', type:'bed', material:'fabric',  color:'grey',  style:'scandinavian', size:'large',  purpose:'home' },
-      { id:3, name:'Кровать Bergen',   price:'от 690 €',   priceNum:690,  image:'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=600&q=80', type:'bed',  material:'velour',  color:'blue',  style:'modern',       size:'medium', purpose:'home' },
-      { id:4, name:'Кровать Tabou',    price:'от 2 490 €', priceNum:2490, image:'/фото т 1.jpg',  type:'bed',  material:'leather', color:'brown', style:'classic',      size:'large',  purpose:'home' },
-    ],
-  },
-  {
-    id: 'poufs',
-    title: 'Пуфы',
-    products: [
-      { id:1, name:'Пуф Visby S',      price:'от 190 €', priceNum:190, image:'/фото к 1.jpg',  type:'pouf', material:'fabric',  color:'beige', style:'scandinavian', size:'small', purpose:'home' },
-      { id:2, name:'Пуф Visby L',      price:'от 290 €', priceNum:290, image:'/фото к2.jpg',   type:'pouf', material:'velour',  color:'grey',  style:'modern',       size:'small', purpose:'home' },
-      { id:3, name:'Пуф Bergen Round', price:'от 350 €', priceNum:350, image:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80', type:'pouf', material:'fabric', color:'green', style:'loft', size:'small', purpose:'office' },
-      { id:4, name:'Пуф Tabou Cube',   price:'от 650 €', priceNum:650, image:'/фото т 3.jpg',  type:'pouf', material:'velour',  color:'brown', style:'classic',      size:'small', purpose:'home' },
-    ],
-  },
-];
+const MATERIAL_LABELS: Record<Material, string> = {
+  all: 'Комбинированные материалы',
+  fabric: 'Ткань',
+  leather: 'Кожа',
+  velour: 'Велюр',
+};
+
+const COLOR_LABELS: Record<Color, string> = {
+  all: 'Универсальный',
+  beige: 'Бежевый',
+  grey: 'Серый',
+  brown: 'Коричневый',
+  blue: 'Синий',
+  green: 'Зеленый',
+  black: 'Черный',
+};
+
+const STYLE_LABELS: Record<Style, string> = {
+  all: 'Универсальный',
+  modern: 'Современный',
+  scandinavian: 'Скандинавский',
+  classic: 'Классический',
+  loft: 'Лофт',
+};
+
+// Подробные описания моделей, чтобы у каждой карточки был свой текст, а не общий шаблон.
+const PRODUCT_DESCRIPTIONS: Record<string, string> = {
+  'Диван Oslo': 'Сбалансированная модель для гостиной с комфортной посадкой и аккуратными формами.',
+  'Диван Bergen': 'Компактный диван для современных пространств и ежедневного использования.',
+  'Tabou Luxe': 'Премиальная модель с глубокой посадкой и выразительной отделкой.',
+  'Угловой Porto': 'Угловой диван для семейной гостиной с удобным местом для отдыха.',
+  'Угловой Porto L': 'Большая угловая версия для просторных интерьеров.',
+  'Угловой Porto P': 'Угловая модель с мягкими боковинами и комфортной спинкой.',
+  'Кровать Lund 160': 'Мягкая кровать с высоким изголовьем для ежедневного комфорта.',
+  'Кровать Tabou': 'Премиальная кровать с акцентом на статусный внешний вид.',
+};
 
 interface FilterOption { value: string; label: string; }
 interface FilterConfig  { label: string; options: FilterOption[]; }
@@ -217,14 +150,27 @@ const FILTERS: Record<FilterKey, FilterConfig> = {
 const FILTER_KEYS: FilterKey[] = ['type', 'color', 'material', 'style', 'size', 'price', 'purpose'];
 
 export default function CatalogPage() {
+  // Состояние мобильного меню в шапке страницы каталога.
   const [menuOpen, setMenuOpen] = useState(false);
+  // Здесь храним, какой выпадающий фильтр сейчас открыт.
   const [openDrop, setOpenDrop] = useState<FilterKey | null>(null);
+  // Здесь фиксируются выбранные пользователем значения фильтров.
   const [selected, setSelected] = useState<Record<FilterKey, string>>({
     type: 'all', color: 'all', material: 'all',
     style: 'all', size: 'all', price: 'all', purpose: 'all',
   });
+  // Короткое сообщение после добавления товара в корзину.
+  const [cartNotice, setCartNotice] = useState<string>('');
+  // Быстрый словарь "id товара в корзине -> количество", чтобы показывать метки прямо на карточках.
+  const [cartQtyById, setCartQtyById] = useState<Record<string, number>>({});
+  // Общее количество позиций в корзине для бейджа на иконке корзины.
+  const [cartTotalQty, setCartTotalQty] = useState(0);
+  // Выбранный товар для показа детального описания в отдельном окне.
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  // Ссылка на контейнер фильтров для закрытия выпадающего списка при клике вне блока.
   const filtersRef = useRef<HTMLDivElement>(null);
 
+  // Автоматически закрываем открытый фильтр, если пользователь кликнул вне панели фильтров.
   useEffect(() => {
     function onOut(e: MouseEvent) {
       if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) {
@@ -233,6 +179,36 @@ export default function CatalogPage() {
     }
     document.addEventListener('mousedown', onOut);
     return () => document.removeEventListener('mousedown', onOut);
+  }, []);
+
+  // Закрываем окно с описанием товара по Escape.
+  useEffect(() => {
+    function onEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSelectedProduct(null);
+      }
+    }
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, []);
+
+  // Считываем корзину из localStorage и обновляем метки на карточках и иконке корзины.
+  useEffect(() => {
+    function syncCartBadges() {
+      const cart = readCartFromStorage();
+      const nextQtyById: Record<string, number> = {};
+      let nextTotal = 0;
+      cart.forEach((item) => {
+        nextQtyById[item.id] = item.qty;
+        nextTotal += item.qty;
+      });
+      setCartQtyById(nextQtyById);
+      setCartTotalQty(nextTotal);
+    }
+
+    syncCartBadges();
+    window.addEventListener('storage', syncCartBadges);
+    return () => window.removeEventListener('storage', syncCartBadges);
   }, []);
 
   function pick(key: FilterKey, value: string) {
@@ -270,6 +246,108 @@ export default function CatalogPage() {
     return found ? found.label : cfg.label;
   }
 
+  // Собираем стабильный id карточки, чтобы корректно связать товар с записью в корзине.
+  function buildCartId(product: Product): string {
+    return `${product.type}-${product.id}-${product.name}`;
+  }
+
+  // Собираем детальные характеристики конкретной модели для окна с описанием товара.
+  function getProductDetails(product: Product): ProductDetails {
+    const sizeLabel =
+      product.size === 'small'
+        ? 'Компактный формат'
+        : product.size === 'medium'
+        ? 'Средний формат'
+        : 'Большой формат';
+    const typeLabel =
+      product.type === 'sofa'
+        ? 'Диван'
+        : product.type === 'corner'
+        ? 'Угловая модель'
+        : product.type === 'chair'
+        ? 'Кресло'
+        : product.type === 'bed'
+        ? 'Кровать'
+        : product.type === 'pouf'
+        ? 'Пуф'
+        : product.type === 'modular'
+        ? 'Модуль'
+        : 'Комплект';
+
+    const materials = [
+      MATERIAL_LABELS[product.material],
+      'Надежный каркас',
+      product.purpose === 'office' ? 'Усиленная износостойкость' : 'Комфорт для дома',
+    ];
+    const colors = [
+      COLOR_LABELS[product.color],
+      product.style === 'classic' ? 'Светлый бежевый' : 'Графит',
+      product.style === 'modern' ? 'Песочный' : 'Молочный',
+    ];
+    const sizes = [
+      sizeLabel,
+      product.size === 'small' ? 'Для компактных пространств' : product.size === 'medium' ? 'Для стандартных комнат' : 'Для просторных комнат',
+      typeLabel,
+    ];
+
+    return {
+      description:
+        PRODUCT_DESCRIPTIONS[product.name] ??
+        `${typeLabel} ${product.name} в стиле "${STYLE_LABELS[product.style]}", рассчитанный на ежедневное использование.`,
+      sizes,
+      materials,
+      colors,
+      country: product.purpose === 'office' ? 'Польша' : 'Польша',
+    };
+  }
+
+  // Добавляем выбранный товар в локальную корзину и показываем короткое подтверждение.
+  function addProductToCart(product: Product) {
+    const nextCart = upsertCartItem(
+      {
+        id: buildCartId(product),
+        name: product.name,
+        material: product.material,
+        color: product.color,
+        price: product.priceNum,
+        image: product.image,
+      },
+      1
+    );
+    // Сразу обновляем метки на карточках и иконке без перезагрузки страницы.
+    const nextQtyById: Record<string, number> = {};
+    let nextTotal = 0;
+    nextCart.forEach((item) => {
+      nextQtyById[item.id] = item.qty;
+      nextTotal += item.qty;
+    });
+    setCartQtyById(nextQtyById);
+    setCartTotalQty(nextTotal);
+    setCartNotice(`"${product.name}" добавлен в корзину`);
+    window.setTimeout(() => setCartNotice(''), 1800);
+  }
+
+  // Открываем окно с описанием и характеристиками товара.
+  function openProductDetails(product: Product) {
+    setSelectedProduct(product);
+  }
+
+  // Закрываем окно с описанием товара.
+  function closeProductDetails() {
+    setSelectedProduct(null);
+  }
+
+  const selectedProductDetails = selectedProduct ? getProductDetails(selectedProduct) : null;
+  const consultantMessage = selectedProduct
+    ? `Здравствуйте! Интересует товар: ${selectedProduct.name}. Цена: ${selectedProduct.price}. Хочу уточнить размеры, материалы, цвета, доставку и оплату.`
+    : '';
+  const consultantWhatsAppLink = selectedProduct
+    ? `https://wa.me/48777777777?text=${encodeURIComponent(consultantMessage)}`
+    : '#';
+  const consultantContactsLink = selectedProduct
+    ? `/contacts?product=${encodeURIComponent(selectedProduct.name)}`
+    : '/contacts';
+
   return (
     <>
       {/* ======= ПОЛНОЭКРАННЫЙ ГЕРОЙ ======= */}
@@ -292,6 +370,14 @@ export default function CatalogPage() {
               <Link href="/">Главная</Link>
               <Link href="/catalog" className="cat-hero__mainnav--active">Категории</Link>
               <Link href="/contacts">Контакты</Link>
+              <Link href="/cart" className="cat-hero__cart-link" aria-label="Корзина" title="Корзина">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18" aria-hidden="true">
+                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 01-8 0"/>
+                </svg>
+                {cartTotalQty > 0 && <span className="cat-hero__cart-badge">{cartTotalQty}</span>}
+              </Link>
             </nav>
 
             <div className="social-drop">
@@ -299,19 +385,19 @@ export default function CatalogPage() {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h3l2 5-2 1c1.7 4 4.3 6.6 8.3 8.3l1-2 4.7 2v3c0 1-1 2-2 2A17 17 0 0 1 2 6c0-1 .9-2 2-2z"/></svg>
               </a>
               <div className="social-drop__panel">
-                <a href="#" className="icon-circle" aria-label="WhatsApp">
+                <a href="https://wa.me/48777777777" className="icon-circle" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20.5l1.7-5.7A8 8 0 1 1 12 20a7.9 7.9 0 0 1-3.6-.8Z"/><path d="M8.8 10.7c.3 1.5 2.3 3.4 3.7 3.9l1.1-.6"/></svg>
                 </a>
                 <a href="tel:+48777777777" className="icon-circle" aria-label="Позвонить">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h3l2 5-2 1c1.7 4 4.3 6.6 8.3 8.3l1-2 4.7 2v3c0 1-1 2-2 2A17 17 0 0 1 2 6c0-1 .9-2 2-2z"/></svg>
                 </a>
-                <a href="#" className="icon-circle" aria-label="Facebook">
+                <a href="https://facebook.com" className="icon-circle" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8h-2a1 1 0 0 0-1 1v2h3l-.4 3h-2.6v8h-3v-8H7v-3h2V9a4 4 0 0 1 4-4h2z"/></svg>
                 </a>
-                <a href="#" className="icon-circle" aria-label="Instagram">
+                <a href="https://instagram.com" className="icon-circle" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.2"/><circle cx="17" cy="7" r="1.2"/></svg>
                 </a>
-                <a href="#" className="icon-circle" aria-label="YouTube">
+                <a href="https://youtube.com" className="icon-circle" aria-label="YouTube" target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="10" rx="3"/><path d="M11 10.5l4 2.5-4 2.5z"/></svg>
                 </a>
                 <Link href="/" className="icon-circle" aria-label="Главная">
@@ -391,6 +477,7 @@ export default function CatalogPage() {
 
       {/* ======= КАТАЛОГ ======= */}
       <main className="page-content">
+        {cartNotice && <p className="catalog-cart-notice">{cartNotice}</p>}
         {SECTIONS.map((section) => {
           const filtered = filterProducts(section.products);
           if (filtered.length === 0) return null;
@@ -399,11 +486,39 @@ export default function CatalogPage() {
               <h2 className="catalog-section__title">{section.title}</h2>
               <div className="product-grid">
                 {filtered.map((product) => (
-                  <article key={product.id} className="product-card">
-                    <div className="product-card__image" style={{ backgroundImage: `url('${product.image}')` }} />
+                  <article key={product.id} className={`product-card ${cartQtyById[buildCartId(product)] ? 'product-card--in-cart' : ''}`}>
+                    <button
+                      type="button"
+                      className="product-card__image product-card__image-btn"
+                      style={{ backgroundImage: `url('${product.image}')` }}
+                      onClick={() => openProductDetails(product)}
+                      aria-label={`Открыть описание товара ${product.name}`}
+                    >
+                      {cartQtyById[buildCartId(product)] ? (
+                        <span className="product-card__in-cart-badge">В корзине: {cartQtyById[buildCartId(product)]}</span>
+                      ) : null}
+                    </button>
                     <div className="product-card__info">
                       <h3 className="product-card__name">{product.name}</h3>
                       <p className="product-card__price">{product.price}</p>
+                      {/* Кнопки действий по товару: обычное добавление или быстрый плюс, если товар уже в корзине. */}
+                      {cartQtyById[buildCartId(product)] ? (
+                        <div className="product-card__actions">
+                          <span className="product-card__in-cart-text">Уже в корзине ({cartQtyById[buildCartId(product)]})</span>
+                          <button
+                            type="button"
+                            className="product-card__plus-btn"
+                            onClick={() => addProductToCart(product)}
+                            aria-label={`Добавить еще один товар ${product.name}`}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button type="button" className="product-card__btn" onClick={() => addProductToCart(product)}>
+                          В корзину
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))}
@@ -412,6 +527,80 @@ export default function CatalogPage() {
           );
         })}
       </main>
+
+      {selectedProduct && selectedProductDetails && (
+        <>
+          <div className="product-details-backdrop" onClick={closeProductDetails} />
+          <section
+            className="product-details-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Описание товара ${selectedProduct.name}`}
+          >
+            <button type="button" className="product-details-close" onClick={closeProductDetails} aria-label="Закрыть окно">
+              ✕
+            </button>
+            <div
+              className="product-details-hero"
+              style={{ backgroundImage: `url('${selectedProduct.image}')` }}
+              aria-hidden="true"
+            />
+            <h2 className="product-details-title">{selectedProduct.name}</h2>
+            <p className="product-details-price">{selectedProduct.price}</p>
+            <p className="product-details-description">{selectedProductDetails.description}</p>
+
+            <div className="product-details-grid">
+              <article>
+                <h3>Размеры</h3>
+                <ul>
+                  {selectedProductDetails.sizes.map((size) => (
+                    <li key={size}>{size}</li>
+                  ))}
+                </ul>
+              </article>
+
+              <article>
+                <h3>Материалы</h3>
+                <ul>
+                  {selectedProductDetails.materials.map((material) => (
+                    <li key={material}>{material}</li>
+                  ))}
+                </ul>
+              </article>
+
+              <article>
+                <h3>Цвета</h3>
+                <ul>
+                  {selectedProductDetails.colors.map((color) => (
+                    <li key={color}>{color}</li>
+                  ))}
+                </ul>
+              </article>
+
+              <article>
+                <h3>Страна производства</h3>
+                <p>{selectedProductDetails.country}</p>
+              </article>
+            </div>
+
+            {/* Блок для быстрого контакта: консультант сразу видит, какой товар выбрал клиент. */}
+            <div className="product-details-contact">
+              <h3>Связаться с консультантом</h3>
+              <p>
+                Отправим консультанту название выбранного товара, чтобы сразу обсудить размеры, доставку и оплату без лишних уточнений.
+              </p>
+              <div className="product-details-contact-actions">
+                <a href={consultantWhatsAppLink} target="_blank" rel="noopener noreferrer" className="product-details-contact-btn product-details-contact-btn--primary">
+                  Написать в WhatsApp
+                </a>
+                <Link href={consultantContactsLink} className="product-details-contact-btn product-details-contact-btn--outline">
+                  Открыть форму консультации
+                </Link>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       <Footer />
     </>

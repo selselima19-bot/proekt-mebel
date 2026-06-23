@@ -230,6 +230,9 @@ export default function Navigation() {
 
         <div className="mobile-menu__divider" />
 
+        {/* Заголовок списка категорий в стиле вертикального меню каталога. */}
+        <p className="mobile-menu__list-title">Категории мебели</p>
+
         <nav className="mobile-menu__catalog">
           <Link href="/catalog#new" onClick={() => setIsOpen(false)}>Новые</Link>
           <Link href="/catalog#sofas" onClick={() => setIsOpen(false)}>Диваны</Link>

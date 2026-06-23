@@ -380,6 +380,16 @@ export default function CatalogPage() {
               </Link>
             </nav>
 
+            {/* Мобильная иконка корзины — показываем рядом с соцсетями и бургером. */}
+            <Link href="/cart" className="cat-hero__cart-link cat-hero__cart-mobile" aria-label="Корзина" title="Корзина">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18" aria-hidden="true">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+              </svg>
+              {cartTotalQty > 0 && <span className="cat-hero__cart-badge">{cartTotalQty}</span>}
+            </Link>
+
             <div className="social-drop">
               <a href="tel:+48777777777" className="icon-circle social-drop__trigger" aria-label="Контакты">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h3l2 5-2 1c1.7 4 4.3 6.6 8.3 8.3l1-2 4.7 2v3c0 1-1 2-2 2A17 17 0 0 1 2 6c0-1 .9-2 2-2z"/></svg>
@@ -417,26 +427,23 @@ export default function CatalogPage() {
       </div>
 
       {/* Мобильное меню */}
-      {menuOpen && (
-        <>
-          <div className="mobile-menu__backdrop" onClick={() => setMenuOpen(false)} />
-          <div className="mobile-menu mobile-menu--open">
-            <button className="mobile-menu__close" onClick={() => setMenuOpen(false)}>✕</button>
-            <div className="mobile-menu__logo">MeblePro</div>
-            <nav className="mobile-menu__nav">
-              <Link href="/" onClick={() => setMenuOpen(false)}>Главная</Link>
-              <Link href="/catalog" onClick={() => setMenuOpen(false)}>Категории</Link>
-              <Link href="/contacts" onClick={() => setMenuOpen(false)}>Контакты</Link>
-            </nav>
-            <div className="mobile-menu__divider" />
-            <nav className="mobile-menu__catalog">
-              {NAV_ITEMS.map((item) => (
-                <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</a>
-              ))}
-            </nav>
-          </div>
-        </>
-      )}
+      <div className={`mobile-menu${menuOpen ? ' mobile-menu--open' : ''}`} aria-hidden={!menuOpen}>
+        <button className="mobile-menu__close" onClick={() => setMenuOpen(false)}>✕</button>
+        <div className="mobile-menu__logo">MeblePro</div>
+        <nav className="mobile-menu__nav">
+          <Link href="/" onClick={() => setMenuOpen(false)}>Главная</Link>
+          <Link href="/catalog" onClick={() => setMenuOpen(false)}>Категории</Link>
+          <Link href="/contacts" onClick={() => setMenuOpen(false)}>Контакты</Link>
+        </nav>
+        <div className="mobile-menu__divider" />
+        <nav className="mobile-menu__catalog">
+          {NAV_ITEMS.map((item) => (
+            <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</a>
+          ))}
+        </nav>
+      </div>
+
+      {menuOpen && <div className="mobile-menu__backdrop" onClick={() => setMenuOpen(false)} />}
 
       {/* ======= ФИЛЬТРЫ ======= */}
       <div className="cat-filters" ref={filtersRef}>
@@ -486,12 +493,28 @@ export default function CatalogPage() {
               <h2 className="catalog-section__title">{section.title}</h2>
               <div className="product-grid">
                 {filtered.map((product) => (
-                  <article key={product.id} className={`product-card ${cartQtyById[buildCartId(product)] ? 'product-card--in-cart' : ''}`}>
+                  <article
+                    key={product.id}
+                    className={`product-card ${cartQtyById[buildCartId(product)] ? 'product-card--in-cart' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Открыть описание товара ${product.name}`}
+                    onClick={() => openProductDetails(product)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openProductDetails(product);
+                      }
+                    }}
+                  >
                     <button
                       type="button"
                       className="product-card__image product-card__image-btn"
                       style={{ backgroundImage: `url('${product.image}')` }}
-                      onClick={() => openProductDetails(product)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openProductDetails(product);
+                      }}
                       aria-label={`Открыть описание товара ${product.name}`}
                     >
                       {cartQtyById[buildCartId(product)] ? (
@@ -508,14 +531,24 @@ export default function CatalogPage() {
                           <button
                             type="button"
                             className="product-card__plus-btn"
-                            onClick={() => addProductToCart(product)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              addProductToCart(product);
+                            }}
                             aria-label={`Добавить еще один товар ${product.name}`}
                           >
                             +
                           </button>
                         </div>
                       ) : (
-                        <button type="button" className="product-card__btn" onClick={() => addProductToCart(product)}>
+                        <button
+                          type="button"
+                          className="product-card__btn"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            addProductToCart(product);
+                          }}
+                        >
                           В корзину
                         </button>
                       )}

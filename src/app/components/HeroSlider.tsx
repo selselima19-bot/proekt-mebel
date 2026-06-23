@@ -3,12 +3,28 @@
   Он выводит видео-экран с основным предложением и кнопками для быстрого перехода.
   Пользователь сразу видит ценность бренда и может перейти в каталог или на консультацию.
 */
+'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function HeroSlider() {
+  // Здесь храним факт прокрутки страницы, чтобы на мобильном показывать кнопки только после скролла.
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Отслеживаем прокрутку и включаем показ кнопок после небольшого движения страницы вниз.
+  useEffect(() => {
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 16);
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <section className="hero-slider">
+    <section className={`hero-slider${isScrolled ? ' hero-slider--scrolled' : ''}`}>
       <div className="hero-slide active">
         {/* Основное видео для крупных экранов, которое задает тон первого экрана. */}
         <video

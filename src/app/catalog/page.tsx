@@ -152,6 +152,8 @@ const FILTER_KEYS: FilterKey[] = ['type', 'color', 'material', 'style', 'size', 
 export default function CatalogPage() {
   // Состояние мобильного меню в шапке страницы каталога.
   const [menuOpen, setMenuOpen] = useState(false);
+  // Состояние выпадающего списка контактов в иконке соцсетей.
+  const [socialOpen, setSocialOpen] = useState(false);
   // Здесь храним, какой выпадающий фильтр сейчас открыт.
   const [openDrop, setOpenDrop] = useState<FilterKey | null>(null);
   // Здесь фиксируются выбранные пользователем значения фильтров.
@@ -167,6 +169,12 @@ export default function CatalogPage() {
   const [cartTotalQty, setCartTotalQty] = useState(0);
   // Выбранный товар для показа детального описания в отдельном окне.
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  // Флаг показывает мобильный экран, чтобы выдавать каталог более компактно.
+  const [isMobile, setIsMobile] = useState(false);
+  // На мобильном здесь храним, какие секции уже раскрыты целиком.
+  const [expandedSectionIds, setExpandedSectionIds] = useState<Record<string, boolean>>({});
+  // На мобильном без фильтров сначала показываем только часть секций.
+  const [visibleSectionCount, setVisibleSectionCount] = useState(3);
   // Ссылка на контейнер фильтров для закрытия выпадающего списка при клике вне блока.
   const filtersRef = useRef<HTMLDivElement>(null);
 
@@ -179,6 +187,17 @@ export default function CatalogPage() {
     }
     document.addEventListener('mousedown', onOut);
     return () => document.removeEventListener('mousedown', onOut);
+  }, []);
+
+  // Отслеживаем ширину экрана, чтобы не перегружать мобильную версию длинной лентой.
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 768px)');
+    function syncMobileMode() {
+      setIsMobile(query.matches);
+    }
+    syncMobileMode();
+    query.addEventListener('change', syncMobileMode);
+    return () => query.removeEventListener('change', syncMobileMode);
   }, []);
 
   // Закрываем окно с описанием товара по Escape.
@@ -235,6 +254,8 @@ export default function CatalogPage() {
 
   function resetAll() {
     setSelected({ type:'all', color:'all', material:'all', style:'all', size:'all', price:'all', purpose:'all' });
+    setExpandedSectionIds({});
+    setVisibleSectionCount(3);
   }
 
   // Подпись на кнопке: категория или выбранное значение
@@ -337,6 +358,16 @@ export default function CatalogPage() {
     setSelectedProduct(null);
   }
 
+  // Раскрываем конкретную секцию на мобильном, если человек хочет увидеть все карточки этой группы.
+  function showAllProductsInSection(sectionId: string) {
+    setExpandedSectionIds((prev) => ({ ...prev, [sectionId]: true }));
+  }
+
+  // Показываем следующую порцию секций на мобильном, чтобы не перегружать экран сразу.
+  function showMoreSections() {
+    setVisibleSectionCount((prev) => prev + 2);
+  }
+
   const selectedProductDetails = selectedProduct ? getProductDetails(selectedProduct) : null;
   const consultantMessage = selectedProduct
     ? `Здравствуйте! Интересует товар: ${selectedProduct.name}. Цена: ${selectedProduct.price}. Хочу уточнить размеры, материалы, цвета, доставку и оплату.`
@@ -347,6 +378,18 @@ export default function CatalogPage() {
   const consultantContactsLink = selectedProduct
     ? `/contacts?product=${encodeURIComponent(selectedProduct.name)}`
     : '/contacts';
+
+  // Собираем секции с учетом фильтров перед выводом.
+  const preparedSections = SECTIONS.map((section) => ({
+    ...section,
+    filteredProducts: filterProducts(section.products),
+  })).filter((section) => section.filteredProducts.length > 0);
+
+  // На мобильном без фильтров сначала показываем только часть секций.
+  const sectionsForView =
+    isMobile && !isFiltered
+      ? preparedSections.slice(0, visibleSectionCount)
+      : preparedSections;
 
   return (
     <>
@@ -391,10 +434,16 @@ export default function CatalogPage() {
             </Link>
 
             <div className="social-drop">
-              <a href="tel:+48777777777" className="icon-circle social-drop__trigger" aria-label="Контакты">
+              <button
+                type="button"
+                className="icon-circle social-drop__trigger"
+                aria-label="Открыть список контактов"
+                aria-expanded={socialOpen}
+                onClick={() => setSocialOpen((prev) => !prev)}
+              >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h3l2 5-2 1c1.7 4 4.3 6.6 8.3 8.3l1-2 4.7 2v3c0 1-1 2-2 2A17 17 0 0 1 2 6c0-1 .9-2 2-2z"/></svg>
-              </a>
-              <div className="social-drop__panel">
+              </button>
+              <div className={`social-drop__panel${socialOpen ? ' social-drop__panel--open' : ''}`}>
                 <a href="https://wa.me/48777777777" className="icon-circle" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20.5l1.7-5.7A8 8 0 1 1 12 20a7.9 7.9 0 0 1-3.6-.8Z"/><path d="M8.8 10.7c.3 1.5 2.3 3.4 3.7 3.9l1.1-.6"/></svg>
                 </a>
@@ -485,27 +534,18 @@ export default function CatalogPage() {
       {/* ======= КАТАЛОГ ======= */}
       <main className="page-content">
         {cartNotice && <p className="catalog-cart-notice">{cartNotice}</p>}
-        {SECTIONS.map((section) => {
-          const filtered = filterProducts(section.products);
-          if (filtered.length === 0) return null;
+        {sectionsForView.map((section) => {
+          const filtered = section.filteredProducts;
+          const isSectionExpanded = Boolean(expandedSectionIds[section.id]);
+          const visibleProducts = isMobile && !isSectionExpanded ? filtered.slice(0, 4) : filtered;
           return (
             <section key={section.id} id={section.id} className="catalog-section">
               <h2 className="catalog-section__title">{section.title}</h2>
               <div className="product-grid">
-                {filtered.map((product) => (
+                {visibleProducts.map((product) => (
                   <article
                     key={product.id}
                     className={`product-card ${cartQtyById[buildCartId(product)] ? 'product-card--in-cart' : ''}`}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Открыть описание товара ${product.name}`}
-                    onClick={() => openProductDetails(product)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        openProductDetails(product);
-                      }
-                    }}
                   >
                     <button
                       type="button"
@@ -541,24 +581,57 @@ export default function CatalogPage() {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          className="product-card__btn"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            addProductToCart(product);
-                          }}
-                        >
-                          В корзину
-                        </button>
+                        <div className="product-card__actions">
+                          <button
+                            type="button"
+                            className="product-card__btn"
+                            onClick={() => addProductToCart(product)}
+                          >
+                            В корзину
+                          </button>
+                          <button
+                            type="button"
+                            className="product-card__details-btn"
+                            onClick={() => openProductDetails(product)}
+                            aria-label={`Открыть подробное описание товара ${product.name}`}
+                          >
+                            Подробнее
+                          </button>
+                        </div>
                       )}
                     </div>
                   </article>
                 ))}
               </div>
+
+              {/* На мобильном показываем оставшиеся карточки секции только по явному действию пользователя. */}
+              {isMobile && filtered.length > 4 && !isSectionExpanded ? (
+                <div className="catalog-section__actions">
+                  <button
+                    type="button"
+                    className="catalog-section__more-btn"
+                    onClick={() => showAllProductsInSection(section.id)}
+                  >
+                    Показать еще {filtered.length - 4}
+                  </button>
+                </div>
+              ) : null}
             </section>
           );
         })}
+
+        {/* Если секций много, добавляем порционную подгрузку блоков в мобильной версии. */}
+        {isMobile && !isFiltered && visibleSectionCount < preparedSections.length ? (
+          <div className="catalog-section__more-sections-wrap">
+            <button
+              type="button"
+              className="catalog-section__more-btn catalog-section__more-btn--wide"
+              onClick={showMoreSections}
+            >
+              Показать еще разделы
+            </button>
+          </div>
+        ) : null}
       </main>
 
       {selectedProduct && selectedProductDetails && (

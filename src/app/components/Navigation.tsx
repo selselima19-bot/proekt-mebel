@@ -11,8 +11,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
+  // Запоминаем текущий адрес страницы, чтобы подсвечивать активный пункт меню.
+  const pathname = usePathname();
   // Состояние мобильного меню (бургер-панель)
   const [isOpen, setIsOpen] = useState(false);
   // Состояние выпадающего списка соцсетей
@@ -20,6 +23,8 @@ export default function Navigation() {
 
   // Ссылка на блок соцсетей — для закрытия при клике вне него
   const socialRef = useRef<HTMLDivElement>(null);
+  // Ссылка на мобильную панель, чтобы корректно удерживать фокус внутри открытого меню.
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // При открытии мобильного меню — закрываем дропдаун соцсетей
   function openMobileMenu() {
@@ -38,6 +43,50 @@ export default function Navigation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Пока мобильное меню открыто, блокируем прокрутку фона.
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
+  // Даем человеку возможность закрыть меню по Escape и удерживаем фокус в пределах панели.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const menu = mobileMenuRef.current;
+    const focusable = menu?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const firstFocusable = focusable?.[0];
+    const lastFocusable = focusable?.[focusable.length - 1];
+
+    firstFocusable?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab' || !firstFocusable || !lastFocusable) return;
+
+      if (event.shiftKey && document.activeElement === firstFocusable) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   return (
     <header className="site-header">
       <div className="top-bar">
@@ -51,9 +100,9 @@ export default function Navigation() {
         <div className="nav-with-icons">
           <nav className="main-nav">
             <ul>
-              <li><Link href="/" className="is-active">Главная</Link></li>
-              <li><Link href="/catalog">Категории</Link></li>
-              <li><Link href="/contacts">Контакты</Link></li>
+              <li><Link href="/" className={pathname === '/' ? 'is-active' : ''}>Главная</Link></li>
+              <li><Link href="/catalog" className={pathname === '/catalog' ? 'is-active' : ''}>Категории</Link></li>
+              <li><Link href="/contacts" className={pathname === '/contacts' ? 'is-active' : ''}>Контакты</Link></li>
             </ul>
           </nav>
 
@@ -209,6 +258,7 @@ export default function Navigation() {
 
       {/* Мобильное меню — боковая панель */}
       <div
+        ref={mobileMenuRef}
         className={`mobile-menu${isOpen ? ' mobile-menu--open' : ''}`}
         aria-hidden={!isOpen}
       >
@@ -223,9 +273,9 @@ export default function Navigation() {
         <div className="mobile-menu__logo">MeblePro</div>
 
         <nav className="mobile-menu__nav">
-          <Link href="/" onClick={() => setIsOpen(false)}>Главная</Link>
-          <Link href="/catalog" onClick={() => setIsOpen(false)}>Категории</Link>
-          <Link href="/contacts" onClick={() => setIsOpen(false)}>Контакты</Link>
+          <Link href="/" onClick={() => setIsOpen(false)} aria-current={pathname === '/' ? 'page' : undefined}>Главная</Link>
+          <Link href="/catalog" onClick={() => setIsOpen(false)} aria-current={pathname === '/catalog' ? 'page' : undefined}>Категории</Link>
+          <Link href="/contacts" onClick={() => setIsOpen(false)} aria-current={pathname === '/contacts' ? 'page' : undefined}>Контакты</Link>
         </nav>
 
         <div className="mobile-menu__divider" />

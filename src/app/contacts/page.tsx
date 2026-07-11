@@ -3,10 +3,64 @@
 Он показывает, как связаться с компанией, где находятся салоны и как отправить заявку.
 Пользователь может быстро выбрать удобный способ связи и получить консультацию.
 */
+'use client';
+
+import { useState } from 'react';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 
 export default function ContactsPage() {
+  // Здесь храним введенные данные, чтобы человек видел свои значения до отправки.
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    message: '',
+  });
+  // Здесь храним короткие подсказки об ошибках по каждому полю.
+  const [errors, setErrors] = useState<Partial<typeof form>>({});
+  // Этот флаг показывает, что заявка успешно отправлена.
+  const [isSent, setIsSent] = useState(false);
+  // Этот флаг временно блокирует кнопку во время отправки.
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Обновляем конкретное поле формы, когда человек вводит данные.
+  function handleFieldChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+  }
+
+  // Проверяем обязательные поля перед отправкой заявки.
+  function validateForm() {
+    const nextErrors: Partial<typeof form> = {};
+
+    if (!form.name.trim()) nextErrors.name = 'Введите имя';
+    if (!form.phone.trim()) nextErrors.phone = 'Введите телефон';
+    if (!form.email.trim() || !form.email.includes('@')) {
+      nextErrors.email = 'Введите корректный email';
+    }
+    if (!form.message.trim()) nextErrors.message = 'Добавьте короткое описание задачи';
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  // Отправляем заявку и показываем подтверждение без перезагрузки страницы.
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSent(false);
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    setIsSubmitting(false);
+    setIsSent(true);
+    setForm({ name: '', phone: '', email: '', message: '' });
+  }
+
   return (
     <>
       <Navigation />
@@ -83,24 +137,83 @@ export default function ContactsPage() {
                 <li>Доставка и сборка включены</li>
               </ul>
             </div>
-            <form className="contact-form">
+            <form className="contact-form" onSubmit={handleSubmit} noValidate>
+              {isSent ? (
+                <p className="contact-form__success" role="status">
+                  Заявка отправлена. Мы свяжемся с вами в ближайшее время.
+                </p>
+              ) : null}
               <label>
                 Имя
-                <input type="text" name="name" placeholder="Ваше имя" />
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Ваше имя"
+                  value={form.name}
+                  onChange={handleFieldChange}
+                  aria-invalid={Boolean(errors.name)}
+                  aria-describedby={errors.name ? 'contact-name-error' : undefined}
+                />
+                {errors.name ? (
+                  <span className="contact-form__error" id="contact-name-error">
+                    {errors.name}
+                  </span>
+                ) : null}
               </label>
               <label>
                 Телефон
-                <input type="tel" name="phone" placeholder="+48 000 000 000" />
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="+48 000 000 000"
+                  value={form.phone}
+                  onChange={handleFieldChange}
+                  aria-invalid={Boolean(errors.phone)}
+                  aria-describedby={errors.phone ? 'contact-phone-error' : undefined}
+                />
+                {errors.phone ? (
+                  <span className="contact-form__error" id="contact-phone-error">
+                    {errors.phone}
+                  </span>
+                ) : null}
               </label>
               <label>
                 Email
-                <input type="email" name="email" placeholder="you@example.com" />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="you@example.com"
+                  value={form.email}
+                  onChange={handleFieldChange}
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={errors.email ? 'contact-email-error' : undefined}
+                />
+                {errors.email ? (
+                  <span className="contact-form__error" id="contact-email-error">
+                    {errors.email}
+                  </span>
+                ) : null}
               </label>
               <label>
                 Сообщение
-                <textarea name="message" rows={4} placeholder="Расскажите о вашем проекте" />
+                <textarea
+                  name="message"
+                  rows={4}
+                  placeholder="Расскажите о вашем проекте"
+                  value={form.message}
+                  onChange={handleFieldChange}
+                  aria-invalid={Boolean(errors.message)}
+                  aria-describedby={errors.message ? 'contact-message-error' : undefined}
+                />
+                {errors.message ? (
+                  <span className="contact-form__error" id="contact-message-error">
+                    {errors.message}
+                  </span>
+                ) : null}
               </label>
-              <button type="submit" className="hero-btn hero-btn--primary">Отправить заявку</button>
+              <button type="submit" className="hero-btn hero-btn--primary" disabled={isSubmitting}>
+                {isSubmitting ? 'Отправляем...' : 'Отправить заявку'}
+              </button>
             </form>
           </div>
         </section>

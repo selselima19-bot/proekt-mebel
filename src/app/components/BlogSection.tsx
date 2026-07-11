@@ -14,8 +14,9 @@ export default function BlogSection() {
   const posts = BLOG_POSTS.slice(0, 3);
 
   return (
-    <section className="blog-section">
+    <section className="blog-section blog-section--home">
       <div className="blog-container">
+        <p className="blog-kicker">Блог и идеи</p>
         <h2 className="blog-title">Что нового?</h2>
         <p className="blog-subtitle">Последние публикации в нашем блоге</p>
 
@@ -41,6 +42,13 @@ export default function BlogSection() {
               </div>
             </article>
           ))}
+        </div>
+
+        {/* Кнопка ведет к полному списку публикаций, чтобы продолжить чтение. */}
+        <div className="blog-section__actions">
+          <Link href="/blog" className="blog-view-all">
+            Смотреть все статьи
+          </Link>
         </div>
 
       </div>

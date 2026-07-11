@@ -80,8 +80,16 @@ function hasSliderImages(offer: OfferCardItem): offer is OfferCardItem & { image
 export default function OfferCards() {
   // Здесь храним, какие карточки уже появились на экране и должны анимироваться.
   const [visibleCards, setVisibleCards] = useState<Record<number, boolean>>({});
+  // Флаг показывает, что экран мобильный и контент нужно выдавать компактно.
+  const [isMobile, setIsMobile] = useState(false);
+  // На мобильном эта кнопка раскрывает полный список категорий.
+  const [showAllMobileCards, setShowAllMobileCards] = useState(false);
   // Здесь держим ссылки на DOM-элементы карточек для наблюдения за их появлением.
   const cardRefs = useRef<Record<number, HTMLAnchorElement | null>>({});
+  // Храним id кадров анимации для плавного tilt-эффекта без лишних перерисовок.
+  const frameRefs = useRef<Record<number, number | null>>({});
+  // Флаг учитывает системное ограничение анимации у пользователя.
+  const allowMotionRef = useRef(true);
 
   // Список карточек категорий, который выводится на главной странице.
   const offers: OfferCardItem[] = [
@@ -189,10 +197,81 @@ export default function OfferCards() {
     },
   ];
 
+  // На мобильном сначала показываем только ключевые направления, чтобы не перегружать экран.
+  const offersForView = isMobile && !showAllMobileCards ? offers.slice(0, 6) : offers;
+
   // Сохраняем ссылку на карточку по ее id, чтобы потом отслеживать появление карточки.
   const setCardRef = (id: number) => (element: HTMLAnchorElement | null) => {
     cardRefs.current[id] = element;
   };
+
+  // Сбрасываем наклон и блик карточки в нейтральное состояние.
+  function resetCardTilt(id: number) {
+    const card = cardRefs.current[id];
+    if (!card) return;
+    card.style.setProperty('--offer-tilt-x', '0deg');
+    card.style.setProperty('--offer-tilt-y', '0deg');
+    card.style.setProperty('--offer-shift-x', '0px');
+    card.style.setProperty('--offer-shift-y', '0px');
+    card.style.setProperty('--offer-sheen-x', '50%');
+    card.style.setProperty('--offer-sheen-y', '50%');
+    card.style.setProperty('--offer-sheen-opacity', '0');
+  }
+
+  // На движении курсора рассчитываем мягкий 3D-наклон и позицию блика.
+  function handleCardPointerMove(id: number, event: React.PointerEvent<HTMLAnchorElement>) {
+    if (!allowMotionRef.current || event.pointerType !== 'mouse') return;
+    const card = cardRefs.current[id];
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+    const clampedX = Math.min(1, Math.max(0, x));
+    const clampedY = Math.min(1, Math.max(0, y));
+    const rotateY = (clampedX - 0.5) * 7;
+    const rotateX = (0.5 - clampedY) * 7;
+    const shiftX = (clampedX - 0.5) * 8;
+    const shiftY = (clampedY - 0.5) * 8;
+
+    if (frameRefs.current[id]) {
+      cancelAnimationFrame(frameRefs.current[id]!);
+    }
+
+    frameRefs.current[id] = requestAnimationFrame(() => {
+      const activeCard = cardRefs.current[id];
+      if (!activeCard) return;
+      activeCard.style.setProperty('--offer-tilt-x', `${rotateX.toFixed(2)}deg`);
+      activeCard.style.setProperty('--offer-tilt-y', `${rotateY.toFixed(2)}deg`);
+      activeCard.style.setProperty('--offer-shift-x', `${shiftX.toFixed(2)}px`);
+      activeCard.style.setProperty('--offer-shift-y', `${shiftY.toFixed(2)}px`);
+      activeCard.style.setProperty('--offer-sheen-x', `${(clampedX * 100).toFixed(1)}%`);
+      activeCard.style.setProperty('--offer-sheen-y', `${(clampedY * 100).toFixed(1)}%`);
+      activeCard.style.setProperty('--offer-sheen-opacity', '1');
+    });
+  }
+
+  // При уходе курсора плавно возвращаем карточку в спокойное положение.
+  function handleCardPointerLeave(id: number) {
+    if (frameRefs.current[id]) {
+      cancelAnimationFrame(frameRefs.current[id]!);
+      frameRefs.current[id] = null;
+    }
+    resetCardTilt(id);
+  }
+
+  // Определяем мобильный экран, чтобы упростить выдачу контента на главной.
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 768px)');
+    function syncMobileMode() {
+      setIsMobile(query.matches);
+      if (!query.matches) {
+        setShowAllMobileCards(false);
+      }
+    }
+    syncMobileMode();
+    query.addEventListener('change', syncMobileMode);
+    return () => query.removeEventListener('change', syncMobileMode);
+  }, []);
 
   // Когда карточка попадает в экран, плавно показываем ее и больше не наблюдаем за ней.
   useEffect(() => {
@@ -211,6 +290,26 @@ export default function OfferCards() {
 
     Object.values(cardRefs.current).forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
+  }, [isMobile, showAllMobileCards]);
+
+  // Слушаем системную настройку "уменьшить движение" и отключаем сложные эффекты при необходимости.
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const frameMap = frameRefs.current;
+    allowMotionRef.current = !query.matches;
+    function handleChange() {
+      allowMotionRef.current = !query.matches;
+      if (query.matches) {
+        Object.keys(cardRefs.current).forEach((key) => resetCardTilt(Number(key)));
+      }
+    }
+    query.addEventListener('change', handleChange);
+    return () => {
+      query.removeEventListener('change', handleChange);
+      Object.values(frameMap).forEach((frameId) => {
+        if (frameId) cancelAnimationFrame(frameId);
+      });
+    };
   }, []);
 
   return (
@@ -218,13 +317,17 @@ export default function OfferCards() {
     <section className="offer-cards" aria-labelledby="offer-cards-title">
       <div className="offer-cards-shell">
         <div className="offer-cards-intro">
+          <p className="offer-cards-intro__eyebrow">Каталог направлений</p>
           <h2 id="offer-cards-title" className="offer-cards-intro__title">
             Категории мебели
           </h2>
+          <p className="offer-cards-intro__text">
+            Подберите нужный раздел: от модульных решений до готовых комплектов для гостиной и спальни.
+          </p>
         </div>
 
         <div className="offer-cards-container">
-          {offers.map((offer, index) => {
+          {offersForView.map((offer, index) => {
             const hasSlider = hasSliderImages(offer);
             return (
               <Link
@@ -242,6 +345,9 @@ export default function OfferCards() {
                     : 'offer-card--hidden'
                 }`}
                 style={{ transitionDelay: visibleCards[offer.id] ? `${index * 65}ms` : '0ms' }}
+                onPointerMove={(event) => handleCardPointerMove(offer.id, event)}
+                onPointerLeave={() => handleCardPointerLeave(offer.id)}
+                onPointerCancel={() => handleCardPointerLeave(offer.id)}
               >
                 <div className="offer-card__media" aria-hidden="true">
                   {hasSlider ? (
@@ -277,6 +383,19 @@ export default function OfferCards() {
             );
           })}
         </div>
+
+        {/* На мобильном человек открывает оставшиеся карточки только если они ему реально нужны. */}
+        {isMobile && !showAllMobileCards ? (
+          <div className="offer-cards__more-wrap">
+            <button
+              type="button"
+              className="offer-cards__more-btn"
+              onClick={() => setShowAllMobileCards(true)}
+            >
+              Показать остальные категории
+            </button>
+          </div>
+        ) : null}
       </div>
     </section>
   );

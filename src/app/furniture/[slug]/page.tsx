@@ -114,6 +114,11 @@ const CATEGORIES: Record<string, {
   },
 };
 
+// Список адресов категорий, которые нужно собрать заранее для публикации на GitHub Pages.
+export function generateStaticParams() {
+  return Object.keys(CATEGORIES).map((slug) => ({ slug }));
+}
+
 export default async function FurnitureCategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   // В Next.js 15+ параметры params стали асинхронными — нужно awaить
   const { slug } = await params;

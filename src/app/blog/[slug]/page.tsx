@@ -8,7 +8,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
-import { BLOG_POSTS_BY_SLUG } from '../../data/blogPosts';
+import { BLOG_POSTS, BLOG_POSTS_BY_SLUG } from '../../data/blogPosts';
+
+// Список адресов статей, которые нужно собрать заранее для публикации на GitHub Pages.
+export function generateStaticParams() {
+  return BLOG_POSTS.map((post) => ({ slug: post.slug }));
+}
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   // Получаем адрес статьи из URL, чтобы найти нужный материал.

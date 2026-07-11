@@ -6,6 +6,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { assetPath } from '../lib/assetPath';
 
 export default function TabouCollection() {
   return (
@@ -39,7 +40,7 @@ export default function TabouCollection() {
 
           <div className="tabou-gallery">
             <Image
-              src="/фото т 2.jpg"
+              src={assetPath('/фото т 2.jpg')}
               alt="Коллекция мебели Tabou"
               className="tabou-image"
               width={600}

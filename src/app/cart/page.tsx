@@ -10,6 +10,7 @@ import Link from 'next/link';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import { CartItem, readCartFromStorage, writeCartToStorage } from '../lib/cartStorage';
+import { assetBackground } from '../lib/assetPath';
 
 type Step = 'cart' | 'checkout' | 'done';
 
@@ -125,7 +126,7 @@ export default function CartPage() {
                 </div>
               ) : cart.map((item) => (
                 <article key={item.id} className="cart-item">
-                  <div className="cart-item__img" style={{ backgroundImage: `url('${item.image}')` }} />
+                  <div className="cart-item__img" style={{ backgroundImage: assetBackground(item.image) }} />
                   <div className="cart-item__info">
                     <h3 className="cart-item__name">{item.name}</h3>
                     <p className="cart-item__meta">{item.material} · {item.color}</p>
@@ -302,7 +303,7 @@ export default function CartPage() {
               <h2 className="cart-summary__title">Ваш заказ</h2>
               {cart.map((item) => (
                 <div key={item.id} className="cart-summary__item">
-                  <div className="cart-summary__item-img" style={{ backgroundImage: `url('${item.image}')` }} />
+                  <div className="cart-summary__item-img" style={{ backgroundImage: assetBackground(item.image) }} />
                   <div className="cart-summary__item-info">
                     <p className="cart-summary__item-name">{item.name}</p>
                     <p className="cart-summary__item-qty">{item.qty} шт. · {(item.price * item.qty).toLocaleString('ru-RU')} €</p>

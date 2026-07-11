@@ -6,6 +6,7 @@
 'use client';
 
 import Link from 'next/link';
+import { assetBackground, assetPath } from '../lib/assetPath';
 
 export default function HeroSlider() {
   return (
@@ -19,13 +20,17 @@ export default function HeroSlider() {
           loop
           playsInline
           preload="metadata"
-          poster="/фото с 1.jpg"
+          poster={assetPath('/фото с 1.jpg')}
         >
-          <source src="/Generisanje_video_snimka_visokog_kvaliteta.mp4" type="video/mp4" />
+          <source src={assetPath('/Generisanje_video_snimka_visokog_kvaliteta.mp4')} type="video/mp4" />
         </video>
 
         {/* Статичный кадр для мобильных и пользователей с ограничением анимации. */}
-        <div className="hero-slide-fallback" aria-hidden="true" />
+        <div
+          className="hero-slide-fallback"
+          aria-hidden="true"
+          style={{ backgroundImage: assetBackground('/фото с 1.jpg') }}
+        />
 
         <div className="hero-overlay" />
 

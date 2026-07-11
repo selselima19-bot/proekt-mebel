@@ -7,6 +7,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { assetBackground } from '../lib/assetPath';
 
 /* ── Слайдер картинок ── */
 function ImageSlider({ images }: { images: string[] }) {
@@ -36,7 +37,7 @@ function ImageSlider({ images }: { images: string[] }) {
           key={src}
           className="offer-card__image offer-card__slide"
           style={{
-            backgroundImage: `url('${src}')`,
+            backgroundImage: assetBackground(src),
             opacity: i === current ? 1 : 0,
             transition: 'opacity 0.7s ease',
             position: i === 0 ? 'relative' : 'absolute',
@@ -355,7 +356,7 @@ export default function OfferCards() {
                   ) : (
                     <div
                       className="offer-card__image"
-                      style={{ backgroundImage: `url('${offer.image}')` }}
+                      style={{ backgroundImage: assetBackground(offer.image) }}
                     />
                   )}
                   <div className="offer-card__glow" />
@@ -367,7 +368,7 @@ export default function OfferCards() {
                     {'inlineImage' in offer && offer.inlineImage && (
                       <div
                         className="offer-card__inline-img"
-                        style={{ backgroundImage: `url('${offer.inlineImage}')` }}
+                        style={{ backgroundImage: assetBackground(offer.inlineImage) }}
                       />
                     )}
                   </div>

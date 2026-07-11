@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import { BLOG_POSTS, BLOG_POSTS_BY_SLUG } from '../../data/blogPosts';
+import { assetPath } from '../../lib/assetPath';
 
 // Список адресов статей, которые нужно собрать заранее для публикации на GitHub Pages.
 export function generateStaticParams() {
@@ -42,7 +43,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="product-card" style={{ maxWidth: '940px', margin: '0 auto' }}>
             <div className="product-card__image" style={{ minHeight: '320px', position: 'relative' }}>
               <Image
-                src={post.image}
+                src={assetPath(post.image)}
                 alt={post.title}
                 fill
                 sizes="(max-width: 960px) 100vw, 940px"

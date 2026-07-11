@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
+import { assetBackground } from '../lib/assetPath';
 
 export default function TabouPage() {
   return (
@@ -13,7 +14,7 @@ export default function TabouPage() {
       <Navigation />
 
       {/* Верхний блок с ключевым сообщением о коллекции Tabou. */}
-      <div className="inner-hero" style={{ backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.35)), url('/фото т 2.jpg')" }}>
+      <div className="inner-hero" style={{ backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.35)), ${assetBackground('/фото т 2.jpg')}` }}>
         <div className="inner-hero__content">
           <p className="inner-hero__eyebrow">Коллекция Tabou</p>
           <h1 className="inner-hero__title">Премиальные решения для современного интерьера</h1>

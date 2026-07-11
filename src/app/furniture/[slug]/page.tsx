@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import Link from 'next/link';
+import { assetBackground } from '../../lib/assetPath';
 
 const CATEGORIES: Record<string, {
   title: string;
@@ -129,7 +130,7 @@ export default async function FurnitureCategoryPage({ params }: { params: Promis
     <>
       <Navigation />
 
-      <div className="inner-hero" style={{ backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.3)), url('${category.image}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="inner-hero" style={{ backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.3)), ${assetBackground(category.image)}`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="inner-hero__content">
           <p className="inner-hero__eyebrow">Каталог</p>
           <h1 className="inner-hero__title">{category.title}</h1>
@@ -142,7 +143,7 @@ export default async function FurnitureCategoryPage({ params }: { params: Promis
           <div className="product-grid">
             {category.products.map((product) => (
               <article key={product.id} className="product-card">
-                <div className="product-card__image" style={{ backgroundImage: `url('${product.image}')` }} />
+                <div className="product-card__image" style={{ backgroundImage: assetBackground(product.image) }} />
                 <div className="product-card__info">
                   <h3 className="product-card__name">{product.name}</h3>
                   <p className="product-card__price">{product.price}</p>

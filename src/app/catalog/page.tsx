@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import Footer from '../components/Footer';
 import { Color, Material, Product, SECTIONS, Style } from '../data/catalogProducts';
 import { readCartFromStorage, upsertCartItem } from '../lib/cartStorage';
+import { assetBackground } from '../lib/assetPath';
 
 const NAV_ITEMS = [
   { label: 'Новые',     href: '#new' },
@@ -550,7 +551,7 @@ export default function CatalogPage() {
                     <button
                       type="button"
                       className="product-card__image product-card__image-btn"
-                      style={{ backgroundImage: `url('${product.image}')` }}
+                      style={{ backgroundImage: assetBackground(product.image) }}
                       onClick={(event) => {
                         event.stopPropagation();
                         openProductDetails(product);
@@ -648,7 +649,7 @@ export default function CatalogPage() {
             </button>
             <div
               className="product-details-hero"
-              style={{ backgroundImage: `url('${selectedProduct.image}')` }}
+              style={{ backgroundImage: assetBackground(selectedProduct.image) }}
               aria-hidden="true"
             />
             <h2 className="product-details-title">{selectedProduct.name}</h2>

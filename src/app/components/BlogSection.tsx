@@ -7,6 +7,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { BLOG_POSTS } from '../data/blogPosts';
+import { assetPath } from '../lib/assetPath';
 
 export default function BlogSection() {
   // Берем статьи из единого источника, чтобы не дублировать данные.
@@ -26,7 +27,7 @@ export default function BlogSection() {
               {/* Картинка статьи в оптимизированном формате для ускоренной загрузки. */}
               <div className="blog-card__image">
                 <Image
-                  src={post.image}
+                  src={assetPath(post.image)}
                   alt={post.title}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

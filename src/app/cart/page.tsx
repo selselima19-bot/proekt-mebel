@@ -27,6 +27,10 @@ export default function CartPage() {
   });
   // Сообщения об ошибках в обязательных полях.
   const [errors, setErrors] = useState<Partial<typeof form>>({});
+  // Показывает, что заказ сейчас отправляется на сервер.
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Сообщение об ошибке, если заказ не удалось сохранить.
+  const [submitError, setSubmitError] = useState('');
 
   // После любого изменения корзины сохраняем данные в localStorage.
   useEffect(() => {
@@ -71,10 +75,49 @@ export default function CartPage() {
     return Object.keys(e).length === 0;
   }
 
-  // Обрабатываем отправку заказа и переводим пользователя на экран успеха.
-  function submit(e: React.FormEvent) {
+  // Отправляем заказ на сервер и переводим пользователя на экран успеха.
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (validate() && agreed) setStep('done');
+    setSubmitError('');
+    if (!validate() || !agreed || cart.length === 0) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          email: form.email,
+          city: form.city,
+          address: form.address,
+          delivery: form.delivery,
+          payment: form.payment,
+          comment: form.comment,
+          items: cart,
+          subtotal,
+          delivery_cost: delivery,
+          total,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setSubmitError(result.error || 'Не удалось оформить заказ');
+        return;
+      }
+
+      setCart([]);
+      writeCartToStorage([]);
+      setStep('done');
+    } catch {
+      setSubmitError('Ошибка сети. Проверьте подключение и попробуйте снова.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   /* ---- шаги ---- */
@@ -293,8 +336,10 @@ export default function CartPage() {
                 <span>Я согласен с <Link href="/contacts">условиями доставки</Link> и <Link href="/contacts">политикой конфиденциальности</Link></span>
               </label>
 
-              <button type="submit" className="checkout-submit" disabled={!agreed}>
-                Подтвердить заказ
+              {submitError && <p className="checkout-field__error checkout-submit-error">{submitError}</p>}
+
+              <button type="submit" className="checkout-submit" disabled={!agreed || isSubmitting}>
+                {isSubmitting ? 'Отправляем заказ...' : 'Подтвердить заказ'}
               </button>
             </form>
 

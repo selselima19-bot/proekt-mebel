@@ -1616,6 +1616,12 @@ select:focus-visible {
     opacity: 1;
     transform: none;
   }
+
+  .product-card--reveal-hidden {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+  }
 }
 
 .catalog-cart-notice {
@@ -3418,18 +3424,37 @@ select:focus-visible {
   overflow: hidden;
   box-shadow: var(--shadow-soft);
   border: 1px solid #eee4d8;
-  transition: transform var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard);
+  transition:
+    opacity var(--motion-slow) var(--ease-standard),
+    transform var(--motion-slow) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
   display: flex;
   flex-direction: column;
 }
 
-.product-card--in-cart {
-  box-shadow: 0 8px 24px rgba(196, 168, 130, 0.26);
+.product-card--reveal-hidden {
+  opacity: 0;
+  transform: translate3d(0, 40px, 0);
+  will-change: opacity, transform;
 }
 
-.product-card:hover {
+.product-card--reveal-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.product-card--reveal-visible:hover {
+  transform: translate3d(0, -4px, 0);
+  box-shadow: var(--shadow-hover);
+}
+
+.product-card:not(.product-card--reveal-hidden):not(.product-card--reveal-visible):hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-hover);
+}
+
+.product-card--in-cart {
+  box-shadow: 0 8px 24px rgba(196, 168, 130, 0.26);
 }
 
 .product-card__image {
@@ -3808,7 +3833,7 @@ select:focus-visible {
   background:
     radial-gradient(circle at 18% 10%, rgba(196, 168, 130, 0.26), transparent 30%),
     linear-gradient(140deg, #2a2119 0%, #1f1813 52%, #221910 100%);
-  padding: 70px 40px 50px;
+  padding: 128px 40px 50px;
 }
 
 .cart-hero__inner {
@@ -4300,6 +4325,10 @@ select:focus-visible {
 .checkout-submit:hover { background: #C4A882; }
 .checkout-submit:disabled { background: #ccc; cursor: default; }
 
+.checkout-submit-error {
+  margin: 0;
+}
+
 /* ---- Экран успеха ---- */
 .cart-done {
   max-width: 600px;
@@ -4408,7 +4437,20 @@ select:focus-visible {
 }
 
 @media (max-width: 600px) {
-  .cart-hero { padding: 60px 20px 36px; }
+  .cart-hero { padding: 96px 20px 36px; }
+  .cart-steps {
+    max-width: 100%;
+    margin: 28px auto 34px;
+  }
+  .cart-steps__item {
+    padding: 0 4px;
+  }
+  .cart-steps__label {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+    font-size: 12px;
+  }
   .cart-item {
     grid-template-columns: 1fr;
   }

@@ -1,7 +1,7 @@
 /*
 Этот файл определяет страницу каталога мебели с фильтрами и секциями.
 Он показывает категории товаров, карточки моделей и панель отбора по параметрам.
-Пользователь может отфильтровать каталог и добавить товар в корзину.
+Пользователь может отфильтровать каталог, добавить товар в корзину и видеть плавное появление карточек при прокрутке.
 */
 'use client';
 
@@ -178,6 +178,10 @@ export default function CatalogPage() {
   const [visibleSectionCount, setVisibleSectionCount] = useState(3);
   // Ссылка на контейнер фильтров для закрытия выпадающего списка при клике вне блока.
   const filtersRef = useRef<HTMLDivElement>(null);
+  // Здесь храним, какие карточки товаров уже плавно появились при прокрутке вверх.
+  const [visibleProductCards, setVisibleProductCards] = useState<Record<string, boolean>>({});
+  // Ссылки на карточки товаров, чтобы отслеживать их появление на экране.
+  const productCardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   // Автоматически закрываем открытый фильтр, если пользователь кликнул вне панели фильтров.
   useEffect(() => {
@@ -392,6 +396,42 @@ export default function CatalogPage() {
       ? preparedSections.slice(0, visibleSectionCount)
       : preparedSections;
 
+  // Список ключей карточек, которые сейчас выведены на экране.
+  const renderedProductKeys = sectionsForView
+    .flatMap((section) => {
+      const isSectionExpanded = Boolean(expandedSectionIds[section.id]);
+      const visibleProducts =
+        isMobile && !isSectionExpanded
+          ? section.filteredProducts.slice(0, 4)
+          : section.filteredProducts;
+      return visibleProducts.map((product) => `${section.id}-${product.id}`);
+    })
+    .join('|');
+
+  // Когда карточка попадает в зону видимости, плавно показываем ее снизу вверх.
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const cardKey = (entry.target as HTMLElement).dataset.productKey;
+          if (!cardKey) return;
+          setVisibleProductCards((prev) => (prev[cardKey] ? prev : { ...prev, [cardKey]: true }));
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+    );
+
+    renderedProductKeys.split('|').forEach((cardKey) => {
+      if (!cardKey) return;
+      const element = productCardRefs.current[cardKey];
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [renderedProductKeys]);
+
   return (
     <>
       {/* ======= ПОЛНОЭКРАННЫЙ ГЕРОЙ ======= */}
@@ -543,10 +583,19 @@ export default function CatalogPage() {
             <section key={section.id} id={section.id} className="catalog-section">
               <h2 className="catalog-section__title">{section.title}</h2>
               <div className="product-grid">
-                {visibleProducts.map((product) => (
+                {visibleProducts.map((product) => {
+                  const cardKey = `${section.id}-${product.id}`;
+                  const isCardVisible = Boolean(visibleProductCards[cardKey]);
+                  return (
                   <article
                     key={product.id}
-                    className={`product-card ${cartQtyById[buildCartId(product)] ? 'product-card--in-cart' : ''}`}
+                    ref={(element) => {
+                      productCardRefs.current[cardKey] = element;
+                    }}
+                    data-product-key={cardKey}
+                    className={`product-card ${
+                      isCardVisible ? 'product-card--reveal-visible' : 'product-card--reveal-hidden'
+                    } ${cartQtyById[buildCartId(product)] ? 'product-card--in-cart' : ''}`}
                   >
                     <button
                       type="button"
@@ -602,7 +651,8 @@ export default function CatalogPage() {
                       )}
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </div>
 
               {/* На мобильном показываем оставшиеся карточки секции только по явному действию пользователя. */}
